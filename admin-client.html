@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--- Including CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <title>CSCU9YW - Admin Client</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg bg-danger navbar-dark">
+    <h1 class="navbar-brand fs-2 p-2">CSCU9YW Admin Client</h1>
+  </nav>
+
+  <div class="simple-container">
+  <section class="d-inline-flex flex-column p-2">
+      <label for="inputEventID">New Event ID</label>
+      <input type="number" min="0" max="9999" required id="inputEventID"  placeholder="Enter Event ID here..">
+      <label for="inputDescription">Description</label>
+      <input type="text" id="inputDescription" required placeholder="Enter Description here..">
+      <label for="inputLocation" >Location</label>
+      <input type="text" id="inputLocation" required style="display: block;" placeholder="Enter Location here.. ">
+      <label for="inputDate" >Date</label>
+      <input type="date" id="inputDate" required pattern="d{2}/d{2}/d{4}"  placeholder="Enter Date here.. ">
+      <label for="inputTime" >Time</label>
+      <input type="text" id="inputTime" required placeholder="Enter Time here.. ">
+      <label for="inputDuration" >Duration</label>
+      <input type="number" min="0" required id="inputDuration"  placeholder="Enter Duration here.. ">
+      <label for="inputCapacity" >Capacity</label>
+      <input type="number" min="0" required id="inputCapacity"  placeholder="Enter Capacity here.. ">
+      <button type="submit" class="btn btn-danger mt-2" style="display:block;" onclick="create_event_request()">Create Event</button>
+      <button class="btn btn-danger mt-2" style="display:block;" onclick="update_event_request()">Update Event</button>
+  </section>
+  <section class="p-2">
+    <label for="eventid">Event ID</label>
+    <input type="text"  id="eventid" placeholder="">
+    <button class="btn btn-danger"  onclick="list_attendees_request()">List Attendees</button>
+    <button class="btn btn-danger" onclick="validate_attendees_request()">Validate Attendees</button>
+    <button class="btn btn-danger" onclick="remove_event_request()">Remove Event</button>
+</section>
+
+<section class="p-2">
+  <button class="btn btn-danger" onclick="list_events_request()">List All Events</button>
+</section>
+  
+
+</div>
+
+<pre id="output"></pre>
+
+  <script>
+    const apikey = 'CHEowkqVLcLsiUJvC95oz8irBUgNeYSutKfo6YJkPyWXUhvzTn'
+
+    function list_events_request() {
+      const output = document.getElementById('output');
+      const url = 'https://localhost:8443/eventreg/events/allEvents'
+
+      fetch(url).
+        then(response => response.json()).
+        then(data => output.innerHTML = JSON.stringify(data, undefined, 2)).
+        catch(error => output.innerHTML = error);
+    }
+
+    function remove_event_request() {
+      const output = document.getElementById('output');
+
+      const eventid = document.getElementById('eventid').value;
+
+      if(eventid == '') {
+        return;
+      }
+
+      const eventServiceURL = `https://localhost:8443/eventreg/events/removeEvent/${eventid}`
+
+      fetch(eventServiceURL, {method: 'DELETE', headers: {'Content-Type': 'application/json'}, body:apikey}).
+      then(response => { output.innerHTML = `Status ${response.status}`}).
+      catch(error => output.innerHTML = error);
+
+    }
+
+    async function update_event_request() {
+      const eventServiceURL = 'https://localhost:8443/eventreg/events/updateEvent'
+
+      if(event_fields_empty()) {
+        alert('Please enter all fields when creating or updating an event')
+        return;
+      }
+
+      const event = {
+        eventID: document.getElementById('inputEventID').value,
+        description: document.getElementById('inputDescription').value,
+        location: document.getElementById('inputLocation').value,
+        date: document.getElementById('inputDate').value,
+        time: document.getElementById('inputTime').value,
+        duration: document.getElementById('inputDuration').value,
+        capacity: document.getElementById('inputCapacity').value,
+        apikey: apikey
+      };
+
+      await fetch(eventServiceURL, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(event)}).
+      then(response => { output.innerHTML = `Status ${response.status}`}).
+      catch(error => output.innerHTML = error);
+
+    }
+
+    async function create_event_request() {
+      const eventServiceURL = `https://localhost:8443/eventreg/events/addEvent`
+
+      if(event_fields_empty()) {
+        alert('Please enter all fields when creating or updating an event')
+        return;
+      }
+
+       const event = {
+         eventID: document.getElementById('inputEventID').value,
+         description: document.getElementById('inputDescription').value,
+         location: document.getElementById('inputLocation').value,
+         date: document.getElementById('inputDate').value,
+         time: document.getElementById('inputTime').value,
+         duration: document.getElementById('inputDuration').value,
+         capacity: document.getElementById('inputCapacity').value,
+         apikey: apikey
+       };
+
+
+       await fetch(eventServiceURL, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(event)}).
+       then(response => { output.innerHTML = `Status ${response.status}`}).
+       catch(error => output.innerHTML = error);
+    }
+
+    function list_attendees_request() {
+      const output = document.getElementById('output');
+
+      const eventid = document.getElementById('eventid').value;
+
+      if(eventid == '') {
+        return;
+      }
+
+      const url = `https://localhost:8443/eventreg/attendees/registeredAttendees/${eventid}`
+
+      fetch(url).
+        then(response => response.json()).
+        then(data => output.innerHTML = JSON.stringify(data, undefined, 2)).
+        catch(error => output.innerHTML = error);
+    }
+
+   async function validate_attendees_request() {
+      const output = document.getElementById('output');
+
+      const eventid = document.getElementById('eventid').value;
+
+      if(eventid == '') {
+        return;
+      }
+
+      const registeredAttendeesURL = `https://localhost:8443/eventreg/attendees/registeredAttendees/${eventid}`;
+
+      const deregisterURL = `https://localhost:8443/eventreg/attendees/deregisterAttendee/${eventid}/`
+
+      const updateURL = `https://localhost:8443/eventreg/attendees/updateAttendee/${eventid}`
+
+      const userProfileURL = `https://pmaier.eu.pythonanywhere.com/user/`;
+
+      const registeredAttendees = await fetch(registeredAttendeesURL).
+                                                then(response => response.json()).
+                                                then(data => data).
+                                                catch(error => output.innerHTML = error);
+
+     await (output.innerHTML = `Validating ${registeredAttendees.length} attendee(s)...\n`);
+
+      for(let i = 0; i < registeredAttendees.length; i++) {
+        const currentAttendee = registeredAttendees[i];
+
+        const user = await fetch(userProfileURL + currentAttendee.uid)
+                           .then(response => response.json())
+                           .then(data => data.user);
+
+        await (output.innerHTML += user == undefined ? `Cancelling: ${currentAttendee.name}\n` : `Validated: ${currentAttendee.name}\n`); 
+
+        if(user == undefined) {
+          await fetch(deregisterURL + currentAttendee.uid, {method: 'DELETE', headers: {'Content-Type': 'application/json'}});
+        }
+        else {
+          //Put
+          await fetch(updateURL, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(currentAttendee)});
+        }
+      
+      }
+
+    }
+
+    function event_fields_empty() {
+    
+      let eventID = document.getElementById('inputEventID').value;
+      let description = document.getElementById('inputDescription').value;
+      let location = document.getElementById('inputLocation').value;
+      let date = document.getElementById('inputDate').value;
+      let time = document.getElementById('inputTime').value;
+      let duration = document.getElementById('inputDuration').value;
+      let capacity = document.getElementById('inputCapacity').value;
+      
+
+      return eventID == '' || description == '' ||
+             location == '' || date == '' || 
+             time == '' || duration == '' ||
+             capacity == '';
+    }
+
+  </script>
+
+  
+    <!--- Including Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+</body>
+</html>
